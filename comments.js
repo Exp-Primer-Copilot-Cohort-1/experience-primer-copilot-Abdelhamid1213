@@ -1,52 +1,55 @@
 // Create a web server
-var express = require('express');
-var app = express();
-var bodyParser = require('body-parser');
-var mongoose = require('mongoose');
+// Importing the express library
+const express = require('express');
+const bodyParser = require('body-parser');
+const app = express();
 
-var Comment = require('./models/comment');
+// Importing the comments.js file
+const comments = require('./comments');
+const Contact = require('./contact');
 
-var db = mongoose.connect('mongodb://localhost/comments');
-
+// Creating a web server
+app.use(express.static('public'));
+app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({
-    extended: true
-}));
 
-app.get('/comments', function(req, res) {
-    Comment.find(function(err, comments) {
-        if (err) {
-            res.status(500).send({ error: 'Something failed!' });
-        } else {
-            res.json(comments);
-        }
-    });
+// Get all comments
+app.get('/api/comments', (req, res) => {
+  res.send(comments.getComments());
 });
 
-app.get('/comments/:id', function(req, res) {
-    Comment.findById(req.params.id, function(err, comment) {
-        if (err) {
-            res.status(500).send({ error: 'Something failed!' });
-        } else {
-            res.json(comment);
-        }
-    });
+// Get a comment by id
+app.get('/api/comments/:id', (req, res) => {
+  const comment = comments.getComment(req.params.id);
+  if (comment) {
+    res.send(comment);
+  } else {
+    res.status(404).send('Comment not found');
+  }
 });
 
-app.post('/comments', function(req, res) {
-    var comment = new Comment();
-    comment.author = req.body.author;
-    comment.text = req.body.text;
-    comment.save(function(err, comment) {
-        if (err) {
-            res.status(500).send({ error: 'Something failed!' });
-        } else {
-            res.json(comment);
-        }
-    });
+// Create a new comment
+app.post('/api/comments', (req, res) => {
+  const comment = req.body;
+  comments.addComment(comment);
+  res.send(comment);
 });
 
-app.put('/comments/:id', function(req, res) {
-    Comment.findByIdAndUpdate(req.params.id, {
-        $set: {
+// Delete a comment
+app.delete('/api/comments/:id', (req, res) => {
+  comments.deleteComment(req.params.id);
+  res.send('Comment deleted');
+});
 
+app.get('/api/contact', (req, res) => {
+  res.send(Contact.getContact());
+});
+
+app.post('/api/contact', (req, res) => {
+  const contact = req.body;
+  Contact.addContact(contact);
+  res.send(contact);
+});
+
+// Listen to port 3000
+app.listen(3000, () => console.log('Server listening on port 3000!'));
