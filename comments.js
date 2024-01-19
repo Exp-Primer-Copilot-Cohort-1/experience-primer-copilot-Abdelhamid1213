@@ -1,48 +1,52 @@
 // Create a web server
-// 1. create a web server
-// 2. create a router
-// 3. create a route
-// 4. create a handler
-// 5. send a response
+var express = require('express');
+var app = express();
+var bodyParser = require('body-parser');
+var mongoose = require('mongoose');
 
-const express = require('express');
-const app = express();
-const router = express.Router();
-const port = 3000;
+var Comment = require('./models/comment');
 
-// GET /comments
-router.get('/', (req, res) => {
-  res.send('GET /comments');
+var db = mongoose.connect('mongodb://localhost/comments');
+
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({
+    extended: true
+}));
+
+app.get('/comments', function(req, res) {
+    Comment.find(function(err, comments) {
+        if (err) {
+            res.status(500).send({ error: 'Something failed!' });
+        } else {
+            res.json(comments);
+        }
+    });
 });
 
-// POST /comments
-router.post('/', (req, res) => {
-  res.send('POST /comments');
+app.get('/comments/:id', function(req, res) {
+    Comment.findById(req.params.id, function(err, comment) {
+        if (err) {
+            res.status(500).send({ error: 'Something failed!' });
+        } else {
+            res.json(comment);
+        }
+    });
 });
 
-// PUT /comments/:id
-router.put('/:id', (req, res) => {
-  res.send('PUT /comments/:id');
+app.post('/comments', function(req, res) {
+    var comment = new Comment();
+    comment.author = req.body.author;
+    comment.text = req.body.text;
+    comment.save(function(err, comment) {
+        if (err) {
+            res.status(500).send({ error: 'Something failed!' });
+        } else {
+            res.json(comment);
+        }
+    });
 });
 
-// DELETE /comments/:id
-router.delete('/:id', (req, res) => {
-  res.send('DELETE /comments/:id');
-});
-
-// GET /comments/:id
-router.get('/:id', (req, res) => {
-  res.send('GET /comments/:id');
-});
-
-// GET /comments/:id/edit
-router.get('/:id/edit', (req, res) => {
-  res.send('GET /comments/:id/edit');
-});
-
-app.use('/comments', router);
-
-app.listen(port, () => {
-  console.log(`Server listening at http://localhost:${port}`);
-});
+app.put('/comments/:id', function(req, res) {
+    Comment.findByIdAndUpdate(req.params.id, {
+        $set: {
 
